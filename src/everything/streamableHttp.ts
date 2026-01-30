@@ -3,10 +3,20 @@ import { InMemoryEventStore } from '@modelcontextprotocol/sdk/examples/shared/in
 import express, { Request, Response } from "express";
 import { createServer } from "./everything.js";
 import { randomUUID } from 'node:crypto';
+import { addAuthEndpoints, AuthConfig } from "./auth.js";
 import cors from 'cors';
 
 console.error('Starting Streamable HTTP server...');
 
+// Configure auth
+const authConfig: AuthConfig = {
+  enabled: process.env.ENABLE_AUTH === 'true'
+};
+
+// Add auth endpoints if enabled
+addAuthEndpoints(app, authConfig);
+
+const transports: { [sessionId: string]: StreamableHTTPServerTransport } = {};
 const app = express();
 app.use(cors({
     "origin": "*", // use "*" with caution in production

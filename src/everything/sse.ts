@@ -1,10 +1,20 @@
 import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
 import express from "express";
 import { createServer } from "./everything.js";
+import { addAuthEndpoints, AuthConfig } from "./auth.js";
 import cors from 'cors';
 
 console.error('Starting SSE server...');
 
+// Configure auth
+const authConfig: AuthConfig = {
+  enabled: process.env.ENABLE_AUTH === 'true'
+};
+
+// Add auth endpoints if enabled
+addAuthEndpoints(app, authConfig);
+
+let transport: SSEServerTransport;
 const app = express();
 app.use(cors({
     "origin": "*", // use "*" with caution in production
