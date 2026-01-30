@@ -91,9 +91,13 @@ export class GoogleDriveStorage implements StorageBackend {
   private credentials: any;
   private driveService: any = null;
   private fileIdCache: string | null = null;
+  private folderId: string | null = null;
 
-  constructor(fileName: string = 'mcp-memory.json', credentials?: string) {
+  constructor(fileName: string = 'mcp-memory.json', credentials?: string, folderId?: string) {
     this.fileName = fileName;
+    
+    // Folder ID can be passed directly or via environment variable
+    this.folderId = folderId || process.env.GOOGLE_DRIVE_FOLDER_ID || null;
     
     // Credentials can be passed directly or via environment variable
     if (credentials) {
@@ -150,10 +154,18 @@ export class GoogleDriveStorage implements StorageBackend {
         .replace(/\\/g, "\\\\")  // Escape backslashes first
         .replace(/'/g, "\\'");    // Then escape single quotes
       
+      // Build query - if folderId is specified, search within that folder
+      let query = `name='${escapedFileName}' and trashed=false`;
+      if (this.folderId) {
+        query += ` and '${this.folderId}' in parents`;
+      }
+      
       const response = await this.driveService.files.list({
-        q: `name='${escapedFileName}' and trashed=false`,
+        q: query,
         fields: 'files(id, name)',
         spaces: 'drive',
+        supportsAllDrives: true,
+        includeItemsFromAllDrives: true,
       });
 
       const files = response.data.files;
@@ -182,6 +194,7 @@ export class GoogleDriveStorage implements StorageBackend {
       const response = await this.driveService.files.get({
         fileId: fileId,
         alt: 'media',
+        supportsAllDrives: true,
       });
 
       const driveFileContent = response.data;
@@ -239,6 +252,7 @@ export class GoogleDriveStorage implements StorageBackend {
               mimeType: 'application/json',
               body: content,
             },
+            supportsAllDrives: true,
           });
         } catch (updateError) {
           // If update fails with 404, clear cache and retry as create
@@ -251,15 +265,23 @@ export class GoogleDriveStorage implements StorageBackend {
         }
       } else {
         // Create new file
+        const fileMetadata: any = {
+          name: this.fileName,
+          mimeType: 'application/json',
+        };
+        
+        // If folderId is specified, create the file in that folder
+        if (this.folderId) {
+          fileMetadata.parents = [this.folderId];
+        }
+        
         const createResponse = await this.driveService.files.create({
-          requestBody: {
-            name: this.fileName,
-            mimeType: 'application/json',
-          },
+          requestBody: fileMetadata,
           media: {
             mimeType: 'application/json',
             body: content,
           },
+          supportsAllDrives: true,
         });
         // Cache the newly created file ID
         this.fileIdCache = createResponse.data.id;
@@ -279,7 +301,8 @@ export function createStorageBackend(): StorageBackend {
     case 'googledrive':
       const fileName = process.env.GOOGLE_DRIVE_FILENAME || 'mcp-memory.json';
       const credentials = process.env.GOOGLE_DRIVE_CREDENTIALS;
-      return new GoogleDriveStorage(fileName, credentials);
+      const folderId = process.env.GOOGLE_DRIVE_FOLDER_ID;
+      return new GoogleDriveStorage(fileName, credentials, folderId);
     
     case 'filesystem':
     case 'file':

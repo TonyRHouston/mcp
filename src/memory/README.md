@@ -201,8 +201,9 @@ To use Google Drive as the storage backend, you need to:
 
 1. Create a Google Cloud Project and enable the Google Drive API
 2. Create a Service Account and download the credentials JSON file
-3. Share your Google Drive folder with the service account email
-4. Configure the memory server with Google Drive credentials:
+3. **Create a folder in your Google Drive and share it with the service account email** (service accounts don't have their own storage)
+4. Get the folder ID from the folder URL
+5. Configure the memory server with Google Drive credentials:
 
 ```json
 {
@@ -216,7 +217,8 @@ To use Google Drive as the storage backend, you need to:
       "env": {
         "STORAGE_TYPE": "googledrive",
         "GOOGLE_DRIVE_CREDENTIALS": "{\"type\":\"service_account\",\"project_id\":\"...\",\"private_key\":\"...\",\"client_email\":\"...\"}",
-        "GOOGLE_DRIVE_FILENAME": "mcp-memory.json"
+        "GOOGLE_DRIVE_FILENAME": "mcp-memory.json",
+        "GOOGLE_DRIVE_FOLDER_ID": "your-folder-id-here"
       }
     }
   }
@@ -226,6 +228,9 @@ To use Google Drive as the storage backend, you need to:
 - `STORAGE_TYPE`: Set to `googledrive` to enable Google Drive storage
 - `GOOGLE_DRIVE_CREDENTIALS`: JSON string containing Google service account credentials
 - `GOOGLE_DRIVE_FILENAME`: Name of the file in Google Drive (default: `mcp-memory.json`)
+- `GOOGLE_DRIVE_FOLDER_ID`: **Required for service accounts** - The folder ID where files will be stored
+
+> **Important:** Service accounts do not have their own storage quota. You must provide a `GOOGLE_DRIVE_FOLDER_ID` pointing to a folder you've shared with the service account.
 
 > **Note:** For detailed instructions on setting up Google Drive credentials and configuration, see [GOOGLE_DRIVE_SETUP.md](GOOGLE_DRIVE_SETUP.md).
 
