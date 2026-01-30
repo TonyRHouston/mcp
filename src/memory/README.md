@@ -227,28 +227,7 @@ To use Google Drive as the storage backend, you need to:
 - `GOOGLE_DRIVE_CREDENTIALS`: JSON string containing Google service account credentials
 - `GOOGLE_DRIVE_FILENAME`: Name of the file in Google Drive (default: `mcp-memory.json`)
 
-**Setting up Google Drive Storage:**
-
-1. Go to [Google Cloud Console](https://console.cloud.google.com/)
-2. Create a new project or select an existing one
-3. Enable the Google Drive API for your project
-4. Create a Service Account:
-   - Go to "IAM & Admin" > "Service Accounts"
-   - Click "Create Service Account"
-   - Give it a name and click "Create"
-   - Skip granting roles and click "Done"
-5. Create and download credentials:
-   - Click on the service account you just created
-   - Go to "Keys" tab
-   - Click "Add Key" > "Create new key"
-   - Choose JSON format and download the file
-6. Share your Google Drive folder:
-   - Open Google Drive
-   - Create a folder or use an existing one where you want to store the memory file
-   - Right-click the folder and select "Share"
-   - Add the service account email (from the JSON file, it looks like `xxx@xxx.iam.gserviceaccount.com`)
-   - Give it "Editor" permission
-7. Copy the contents of the downloaded JSON file and set it as the `GOOGLE_DRIVE_CREDENTIALS` environment variable (as a single-line JSON string)
+> **Note:** For detailed instructions on setting up Google Drive credentials and configuration, see [GOOGLE_DRIVE_SETUP.md](GOOGLE_DRIVE_SETUP.md).
 
 
 # VS Code Installation Instructions

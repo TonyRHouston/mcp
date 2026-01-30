@@ -49,9 +49,13 @@ export class FileSystemStorage implements StorageBackend {
       const data = await fs.readFile(this.filePath, "utf-8");
       const lines = data.split("\n").filter(line => line.trim() !== "");
       return lines.reduce((graph: KnowledgeGraph, line) => {
-        const item = JSON.parse(line);
-        if (item.type === "entity") graph.entities.push(item as Entity);
-        if (item.type === "relation") graph.relations.push(item as Relation);
+        try {
+          const item = JSON.parse(line);
+          if (item.type === "entity") graph.entities.push(item as Entity);
+          if (item.type === "relation") graph.relations.push(item as Relation);
+        } catch (parseError) {
+          console.error(`Warning: Skipping malformed line in memory file: ${parseError}`);
+        }
         return graph;
       }, { entities: [], relations: [] });
     } catch (error) {
@@ -86,6 +90,7 @@ export class GoogleDriveStorage implements StorageBackend {
   private fileName: string;
   private credentials: any;
   private driveService: any = null;
+  private fileIdCache: string | null = null;
 
   constructor(fileName: string = 'mcp-memory.json', credentials?: string) {
     this.fileName = fileName;
@@ -99,6 +104,14 @@ export class GoogleDriveStorage implements StorageBackend {
       throw new Error(
         'Google Drive credentials not provided. Set GOOGLE_DRIVE_CREDENTIALS environment variable or pass credentials to constructor.'
       );
+    }
+
+    // Validate required credential fields
+    const requiredFields = ['type', 'project_id', 'private_key', 'client_email'];
+    for (const field of requiredFields) {
+      if (!this.credentials[field]) {
+        throw new Error(`Missing required credential field: ${field}`);
+      }
     }
   }
 
@@ -117,28 +130,39 @@ export class GoogleDriveStorage implements StorageBackend {
 
       this.driveService = google.drive({ version: 'v3', auth });
     } catch (error) {
-      throw new Error(`Failed to initialize Google Drive service: ${error}`);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw new Error(`Failed to initialize Google Drive service: ${errorMessage}`);
     }
   }
 
-  // Find the memory file by name
+  // Find the memory file by name, with caching
   private async findFile(): Promise<string | null> {
     await this.initDriveService();
 
+    // Return cached file ID if available
+    if (this.fileIdCache) {
+      return this.fileIdCache;
+    }
+
     try {
+      // Escape single quotes in filename to prevent injection
+      const escapedFileName = this.fileName.replace(/'/g, "\\'");
+      
       const response = await this.driveService.files.list({
-        q: `name='${this.fileName}' and trashed=false`,
+        q: `name='${escapedFileName}' and trashed=false`,
         fields: 'files(id, name)',
         spaces: 'drive',
       });
 
       const files = response.data.files;
       if (files && files.length > 0) {
-        return files[0].id;
+        this.fileIdCache = files[0].id;
+        return this.fileIdCache;
       }
       return null;
     } catch (error) {
-      throw new Error(`Failed to search for file: ${error}`);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw new Error(`Failed to search for file: ${errorMessage}`);
     }
   }
 
@@ -158,20 +182,27 @@ export class GoogleDriveStorage implements StorageBackend {
         alt: 'media',
       });
 
-      const data = response.data;
-      const lines = data.split("\n").filter((line: string) => line.trim() !== "");
+      const driveFileContent = response.data;
+      const lines = driveFileContent.split("\n").filter((line: string) => line.trim() !== "");
       return lines.reduce((graph: KnowledgeGraph, line: string) => {
-        const item = JSON.parse(line);
-        if (item.type === "entity") graph.entities.push(item as Entity);
-        if (item.type === "relation") graph.relations.push(item as Relation);
+        try {
+          const item = JSON.parse(line);
+          if (item.type === "entity") graph.entities.push(item as Entity);
+          if (item.type === "relation") graph.relations.push(item as Relation);
+        } catch (parseError) {
+          console.error(`Warning: Skipping malformed line in Google Drive file: ${parseError}`);
+        }
         return graph;
       }, { entities: [], relations: [] });
     } catch (error) {
       // If file doesn't exist, return empty graph
       if ((error as any).code === 404) {
+        // Clear cache since file doesn't exist
+        this.fileIdCache = null;
         return { entities: [], relations: [] };
       }
-      throw new Error(`Failed to load graph from Google Drive: ${error}`);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw new Error(`Failed to load graph from Google Drive: ${errorMessage}`);
     }
   }
 
@@ -199,16 +230,26 @@ export class GoogleDriveStorage implements StorageBackend {
 
       if (fileId) {
         // Update existing file
-        await this.driveService.files.update({
-          fileId: fileId,
-          media: {
-            mimeType: 'application/json',
-            body: content,
-          },
-        });
+        try {
+          await this.driveService.files.update({
+            fileId: fileId,
+            media: {
+              mimeType: 'application/json',
+              body: content,
+            },
+          });
+        } catch (updateError) {
+          // If update fails with 404, clear cache and retry as create
+          if ((updateError as any).code === 404) {
+            this.fileIdCache = null;
+            await this.saveGraph(graph);
+            return;
+          }
+          throw updateError;
+        }
       } else {
         // Create new file
-        await this.driveService.files.create({
+        const createResponse = await this.driveService.files.create({
           requestBody: {
             name: this.fileName,
             mimeType: 'application/json',
@@ -218,9 +259,12 @@ export class GoogleDriveStorage implements StorageBackend {
             body: content,
           },
         });
+        // Cache the newly created file ID
+        this.fileIdCache = createResponse.data.id;
       }
     } catch (error) {
-      throw new Error(`Failed to save graph to Google Drive: ${error}`);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw new Error(`Failed to save graph to Google Drive: ${errorMessage}`);
     }
   }
 }
@@ -231,8 +275,6 @@ export function createStorageBackend(): StorageBackend {
   
   switch (storageType.toLowerCase()) {
     case 'googledrive':
-    case 'google-drive':
-    case 'gdrive':
       const fileName = process.env.GOOGLE_DRIVE_FILENAME || 'mcp-memory.json';
       const credentials = process.env.GOOGLE_DRIVE_CREDENTIALS;
       return new GoogleDriveStorage(fileName, credentials);

@@ -53,6 +53,14 @@ When using Google Drive as a storage backend for the MCP Memory Server, it's imp
   - The service account itself
 - Ensure the service account credentials are stored securely to prevent unauthorized access
 
+### Concurrent Access
+- **Single Instance Recommended**: The current implementation is designed for single-instance use
+- **Multiple Instances**: If running multiple instances of the MCP server with the same Google Drive storage:
+  - Be aware of potential race conditions when creating/updating files
+  - The implementation includes basic retry logic for 404 errors
+  - For production use with multiple instances, consider implementing distributed locking or using a database backend
+- **File Caching**: The implementation caches the Google Drive file ID to reduce API calls. This cache is cleared on 404 errors.
+
 ## Example Secure Setup
 
 ### Using Environment Files (Not Committed)
