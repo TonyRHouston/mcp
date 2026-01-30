@@ -13,10 +13,6 @@ const authConfig: AuthConfig = {
   enabled: process.env.ENABLE_AUTH === 'true'
 };
 
-// Add auth endpoints if enabled
-addAuthEndpoints(app, authConfig);
-
-const transports: { [sessionId: string]: StreamableHTTPServerTransport } = {};
 const app = express();
 app.use(cors({
     "origin": "*", // use "*" with caution in production
@@ -29,6 +25,9 @@ app.use(cors({
         'mcp-protocol-version'
     ]
 })); // Enable CORS for all routes so Inspector can connect
+
+// Add auth endpoints if enabled
+addAuthEndpoints(app, authConfig);
 
 const transports: Map<string, StreamableHTTPServerTransport> = new Map<string, StreamableHTTPServerTransport>();
 
@@ -188,10 +187,10 @@ process.on('SIGINT', async () => {
   console.error('Shutting down server...');
 
   // Close all active transports to properly clean up resources
-  for (const sessionId in transports) {
+  for (const [sessionId, transport] of transports) {
     try {
       console.error(`Closing transport for session ${sessionId}`);
-      await transports.get(sessionId)!.close();
+      await transport.close();
       transports.delete(sessionId);
     } catch (error) {
       console.error(`Error closing transport for session ${sessionId}:`, error);

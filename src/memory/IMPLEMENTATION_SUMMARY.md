@@ -80,7 +80,7 @@ The implementation introduces a clean abstraction layer that separates storage c
 | `MEMORY_FILE_PATH` | `memory.json` | Path for filesystem storage |
 | `GOOGLE_DRIVE_CREDENTIALS` | - | Service Account JSON credentials |
 | `GOOGLE_DRIVE_FILENAME` | `mcp-memory.json` | Filename in Google Drive |
-| `GOOGLE_DRIVE_FOLDER_ID` | - | **Required for service accounts** - Folder ID to store files in |
+| `GOOGLE_DRIVE_FOLDER_ID` | - | Parent folder ID (optional, supports Shared Drives) |
 
 ### Example Configurations
 

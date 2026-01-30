@@ -95,6 +95,7 @@ export class GoogleDriveStorage implements StorageBackend {
 
   constructor(fileName: string = 'mcp-memory.json', credentials?: string, folderId?: string) {
     this.fileName = fileName;
+    this.folderId = folderId ?? null;
     
     // Folder ID can be passed directly or via environment variable
     this.folderId = folderId || process.env.GOOGLE_DRIVE_FOLDER_ID || null;
@@ -154,18 +155,21 @@ export class GoogleDriveStorage implements StorageBackend {
         .replace(/\\/g, "\\\\")  // Escape backslashes first
         .replace(/'/g, "\\'");    // Then escape single quotes
       
-      // Build query - if folderId is specified, search within that folder
-      let query = `name='${escapedFileName}' and trashed=false`;
+      const queryParts = [
+        `name='${escapedFileName}'`,
+        "trashed=false",
+      ];
       if (this.folderId) {
-        query += ` and '${this.folderId}' in parents`;
+        queryParts.push(`'${this.folderId}' in parents`);
       }
-      
+
       const response = await this.driveService.files.list({
-        q: query,
+        q: queryParts.join(' and '),
         fields: 'files(id, name)',
         spaces: 'drive',
         supportsAllDrives: true,
         includeItemsFromAllDrives: true,
+        corpora: this.folderId ? 'allDrives' : 'user',
       });
 
       const files = response.data.files;
@@ -276,7 +280,11 @@ export class GoogleDriveStorage implements StorageBackend {
         }
         
         const createResponse = await this.driveService.files.create({
-          requestBody: fileMetadata,
+          requestBody: {
+            name: this.fileName,
+            mimeType: 'application/json',
+            ...(this.folderId ? { parents: [this.folderId] } : {}),
+          },
           media: {
             mimeType: 'application/json',
             body: content,
