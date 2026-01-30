@@ -1,0 +1,7 @@
+{
+  "servers": {
+    "memory": {
+      "command": "/home/web3tony/mcp/scripts/mcp-memory-drive.sh"
+    }
+  }
+}

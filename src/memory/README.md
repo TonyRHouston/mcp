@@ -216,7 +216,8 @@ To use Google Drive as the storage backend, you need to:
       "env": {
         "STORAGE_TYPE": "googledrive",
         "GOOGLE_DRIVE_CREDENTIALS": "{\"type\":\"service_account\",\"project_id\":\"...\",\"private_key\":\"...\",\"client_email\":\"...\"}",
-        "GOOGLE_DRIVE_FILENAME": "mcp-memory.json"
+        "GOOGLE_DRIVE_FILENAME": "mcp-memory.json",
+        "GOOGLE_DRIVE_FOLDER_ID": "your-folder-id"
       }
     }
   }
@@ -226,6 +227,7 @@ To use Google Drive as the storage backend, you need to:
 - `STORAGE_TYPE`: Set to `googledrive` to enable Google Drive storage
 - `GOOGLE_DRIVE_CREDENTIALS`: JSON string containing Google service account credentials
 - `GOOGLE_DRIVE_FILENAME`: Name of the file in Google Drive (default: `mcp-memory.json`)
+- `GOOGLE_DRIVE_FOLDER_ID`: Optional parent folder ID (including Shared Drives)
 
 > **Note:** For detailed instructions on setting up Google Drive credentials and configuration, see [GOOGLE_DRIVE_SETUP.md](GOOGLE_DRIVE_SETUP.md).
 

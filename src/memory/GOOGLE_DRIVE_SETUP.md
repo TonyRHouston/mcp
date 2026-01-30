@@ -26,7 +26,8 @@ Add this to your `claude_desktop_config.json`:
       "env": {
         "STORAGE_TYPE": "googledrive",
         "GOOGLE_DRIVE_CREDENTIALS": "{\"type\":\"service_account\",\"project_id\":\"your-project\",\"private_key_id\":\"key-id\",\"private_key\":\"-----BEGIN PRIVATE KEY-----\\n...\\n-----END PRIVATE KEY-----\\n\",\"client_email\":\"service-account@your-project.iam.gserviceaccount.com\",\"client_id\":\"123456789\",\"auth_uri\":\"https://accounts.google.com/o/oauth2/auth\",\"token_uri\":\"https://oauth2.googleapis.com/token\",\"auth_provider_x509_cert_url\":\"https://www.googleapis.com/oauth2/v1/certs\",\"client_x509_cert_url\":\"https://www.googleapis.com/robot/v1/metadata/x509/...\"}",
-        "GOOGLE_DRIVE_FILENAME": "mcp-memory.json"
+        "GOOGLE_DRIVE_FILENAME": "mcp-memory.json",
+        "GOOGLE_DRIVE_FOLDER_ID": "your-folder-id"
       }
     }
   }
@@ -59,7 +60,8 @@ Add this to your `.vscode/mcp.json` or user MCP configuration:
       "env": {
         "STORAGE_TYPE": "googledrive",
         "GOOGLE_DRIVE_CREDENTIALS": "{\"type\":\"service_account\",\"project_id\":\"your-project\",\"private_key_id\":\"key-id\",\"private_key\":\"-----BEGIN PRIVATE KEY-----\\n...\\n-----END PRIVATE KEY-----\\n\",\"client_email\":\"service-account@your-project.iam.gserviceaccount.com\",\"client_id\":\"123456789\",\"auth_uri\":\"https://accounts.google.com/o/oauth2/auth\",\"token_uri\":\"https://oauth2.googleapis.com/token\",\"auth_provider_x509_cert_url\":\"https://www.googleapis.com/oauth2/v1/certs\",\"client_x509_cert_url\":\"https://www.googleapis.com/robot/v1/metadata/x509/...\"}",
-        "GOOGLE_DRIVE_FILENAME": "mcp-memory.json"
+        "GOOGLE_DRIVE_FILENAME": "mcp-memory.json",
+        "GOOGLE_DRIVE_FOLDER_ID": "your-folder-id"
       }
     }
   }
@@ -74,6 +76,7 @@ Add this to your `.vscode/mcp.json` or user MCP configuration:
 | `MEMORY_FILE_PATH` | Path to local JSON file (filesystem only) | `memory.json` | No |
 | `GOOGLE_DRIVE_CREDENTIALS` | Google Service Account credentials JSON | - | Yes (for Google Drive) |
 | `GOOGLE_DRIVE_FILENAME` | Filename in Google Drive | `mcp-memory.json` | No |
+| `GOOGLE_DRIVE_FOLDER_ID` | Parent folder ID (works with Shared Drives too) | - | No |
 
 ## Using Alternative Credentials File
 

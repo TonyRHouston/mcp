@@ -11,11 +11,9 @@ const authConfig: AuthConfig = {
   enabled: process.env.ENABLE_AUTH === 'true'
 };
 
+const app = express();
 // Add auth endpoints if enabled
 addAuthEndpoints(app, authConfig);
-
-let transport: SSEServerTransport;
-const app = express();
 app.use(cors({
     "origin": "*", // use "*" with caution in production
     "methods": "GET,POST",
