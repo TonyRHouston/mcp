@@ -2,6 +2,15 @@
 
 A basic implementation of persistent memory using a local knowledge graph. This lets Claude remember information about the user across chats.
 
+## Storage Options
+
+The memory server supports two storage backends:
+- **File System** (default): Stores data in a local JSON file
+- **Google Drive**: Stores data in Google Drive for cloud-based persistence and sharing
+
+For detailed Google Drive setup instructions, see [GOOGLE_DRIVE_SETUP.md](GOOGLE_DRIVE_SETUP.md).  
+For security considerations, see [SECURITY_GOOGLE_DRIVE.md](SECURITY_GOOGLE_DRIVE.md).
+
 ## Core Concepts
 
 ### Entities
