@@ -6,74 +6,28 @@ import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
-import { promises as fs } from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-// Define memory file path using environment variable with fallback
-const defaultMemoryPath = path.join(path.dirname(fileURLToPath(import.meta.url)), 'memory.json');
-
-// If MEMORY_FILE_PATH is just a filename, put it in the same directory as the script
-const MEMORY_FILE_PATH = process.env.MEMORY_FILE_PATH
-  ? path.isAbsolute(process.env.MEMORY_FILE_PATH)
-    ? process.env.MEMORY_FILE_PATH
-    : path.join(path.dirname(fileURLToPath(import.meta.url)), process.env.MEMORY_FILE_PATH)
-  : defaultMemoryPath;
-
-// We are storing our memory using entities, relations, and observations in a graph structure
-interface Entity {
-  name: string;
-  entityType: string;
-  observations: string[];
-}
-
-interface Relation {
-  from: string;
-  to: string;
-  relationType: string;
-}
-
-interface KnowledgeGraph {
-  entities: Entity[];
-  relations: Relation[];
-}
+import {
+  Entity,
+  Relation,
+  KnowledgeGraph,
+  StorageBackend,
+  createStorageBackend,
+} from './storage.js';
 
 // The KnowledgeGraphManager class contains all operations to interact with the knowledge graph
 class KnowledgeGraphManager {
+  private storage: StorageBackend;
+
+  constructor(storage: StorageBackend) {
+    this.storage = storage;
+  }
+
   private async loadGraph(): Promise<KnowledgeGraph> {
-    try {
-      const data = await fs.readFile(MEMORY_FILE_PATH, "utf-8");
-      const lines = data.split("\n").filter(line => line.trim() !== "");
-      return lines.reduce((graph: KnowledgeGraph, line) => {
-        const item = JSON.parse(line);
-        if (item.type === "entity") graph.entities.push(item as Entity);
-        if (item.type === "relation") graph.relations.push(item as Relation);
-        return graph;
-      }, { entities: [], relations: [] });
-    } catch (error) {
-      if (error instanceof Error && 'code' in error && (error as any).code === "ENOENT") {
-        return { entities: [], relations: [] };
-      }
-      throw error;
-    }
+    return this.storage.loadGraph();
   }
 
   private async saveGraph(graph: KnowledgeGraph): Promise<void> {
-    const lines = [
-      ...graph.entities.map(e => JSON.stringify({ 
-        type: "entity", 
-        name: e.name, 
-        entityType: e.entityType, 
-        observations: e.observations 
-      })),
-      ...graph.relations.map(r => JSON.stringify({ 
-        type: "relation", 
-        from: r.from, 
-        to: r.to, 
-        relationType: r.relationType 
-      })),
-    ];
-    await fs.writeFile(MEMORY_FILE_PATH, lines.join("\n"));
+    return this.storage.saveGraph(graph);
   }
 
   async createEntities(entities: Entity[]): Promise<Entity[]> {
@@ -193,7 +147,8 @@ class KnowledgeGraphManager {
   }
 }
 
-const knowledgeGraphManager = new KnowledgeGraphManager();
+const storageBackend = createStorageBackend();
+const knowledgeGraphManager = new KnowledgeGraphManager(storageBackend);
 
 
 // The server instance and tools exposed to Claude

@@ -2,6 +2,15 @@
 
 A basic implementation of persistent memory using a local knowledge graph. This lets Claude remember information about the user across chats.
 
+## Storage Options
+
+The memory server supports two storage backends:
+- **File System** (default): Stores data in a local JSON file
+- **Google Drive**: Stores data in Google Drive for cloud-based persistence and sharing
+
+For detailed Google Drive setup instructions, see [GOOGLE_DRIVE_SETUP.md](GOOGLE_DRIVE_SETUP.md).  
+For security considerations, see [SECURITY_GOOGLE_DRIVE.md](SECURITY_GOOGLE_DRIVE.md).
+
 ## Core Concepts
 
 ### Entities
@@ -163,6 +172,8 @@ Add this to your claude_desktop_config.json:
 
 The server can be configured using the following environment variables:
 
+##### File System Storage (Default)
+
 ```json
 {
   "mcpServers": {
@@ -173,6 +184,7 @@ The server can be configured using the following environment variables:
         "@modelcontextprotocol/server-memory"
       ],
       "env": {
+        "STORAGE_TYPE": "filesystem",
         "MEMORY_FILE_PATH": "/path/to/custom/memory.json"
       }
     }
@@ -180,7 +192,43 @@ The server can be configured using the following environment variables:
 }
 ```
 
+- `STORAGE_TYPE`: Storage backend type (default: `filesystem`). Options: `filesystem`, `googledrive`
 - `MEMORY_FILE_PATH`: Path to the memory storage JSON file (default: `memory.json` in the server directory)
+
+##### Google Drive Storage
+
+To use Google Drive as the storage backend, you need to:
+
+1. Create a Google Cloud Project and enable the Google Drive API
+2. Create a Service Account and download the credentials JSON file
+3. Share your Google Drive folder with the service account email
+4. Configure the memory server with Google Drive credentials:
+
+```json
+{
+  "mcpServers": {
+    "memory": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-memory"
+      ],
+      "env": {
+        "STORAGE_TYPE": "googledrive",
+        "GOOGLE_DRIVE_CREDENTIALS": "{\"type\":\"service_account\",\"project_id\":\"...\",\"private_key\":\"...\",\"client_email\":\"...\"}",
+        "GOOGLE_DRIVE_FILENAME": "mcp-memory.json"
+      }
+    }
+  }
+}
+```
+
+- `STORAGE_TYPE`: Set to `googledrive` to enable Google Drive storage
+- `GOOGLE_DRIVE_CREDENTIALS`: JSON string containing Google service account credentials
+- `GOOGLE_DRIVE_FILENAME`: Name of the file in Google Drive (default: `mcp-memory.json`)
+
+> **Note:** For detailed instructions on setting up Google Drive credentials and configuration, see [GOOGLE_DRIVE_SETUP.md](GOOGLE_DRIVE_SETUP.md).
+
 
 # VS Code Installation Instructions
 
