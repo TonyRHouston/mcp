@@ -352,7 +352,36 @@ async def serve(repository: Path | None) -> None:
 
     @server.call_tool()
     async def call_tool(name: str, arguments: dict) -> list[TextContent]:
-        repo_path = Path(arguments["repo_path"])
+        repo_path_str = arguments["repo_path"]
+        
+        # Validate repo_path to prevent path traversal attacks
+        # Check for suspicious patterns in the original path before normalization
+        if '..' in repo_path_str or '\x00' in repo_path_str:
+            return [TextContent(
+                type="text",
+                text="Error: Invalid repository path - path traversal pattern detected"
+            )]
+        
+        try:
+            repo_path = Path(repo_path_str).resolve()
+        except (ValueError, OSError) as e:
+            return [TextContent(
+                type="text",
+                text=f"Error: Invalid repository path - {str(e)}"
+            )]
+        
+        # If a repository was specified at startup, validate that the requested path
+        # is either that repository or within its directory tree
+        if repository is not None:
+            try:
+                repo_path.relative_to(repository.resolve())
+            except ValueError:
+                # repo_path is not relative to the allowed repository
+                if repo_path != repository.resolve():
+                    return [TextContent(
+                        type="text",
+                        text=f"Error: Access denied - path is outside allowed repository: {repository}"
+                    )]
         
         # Handle git init separately since it doesn't require an existing repo
         if name == GitTools.INIT:
@@ -363,7 +392,18 @@ async def serve(repository: Path | None) -> None:
             )]
             
         # For all other commands, we need an existing repo
-        repo = git.Repo(repo_path)
+        try:
+            repo = git.Repo(repo_path)
+        except git.InvalidGitRepositoryError:
+            return [TextContent(
+                type="text",
+                text=f"Error: {repo_path} is not a valid Git repository"
+            )]
+        except Exception as e:
+            return [TextContent(
+                type="text",
+                text=f"Error: Failed to access repository - {str(e)}"
+            )]
 
         match name:
             case GitTools.STATUS:
