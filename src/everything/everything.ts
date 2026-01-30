@@ -30,10 +30,10 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const instructions = readFileSync(join(__dirname, "instructions.md"), "utf-8");
 
-const ToolInputSchema = ToolSchema.shape.inputSchema;
+const ToolInputSchema = ToolSchema.shape.inputSchema as unknown as z.ZodType<any, any, any>;
 type ToolInput = z.infer<typeof ToolInputSchema>;
 
-const ToolOutputSchema = ToolSchema.shape.outputSchema;
+const ToolOutputSchema = ToolSchema.shape.outputSchema as unknown as z.ZodType<any, any, any>;
 type ToolOutput = z.infer<typeof ToolOutputSchema>;
 
 /* Input schemas for tools implemented in this server */
@@ -619,7 +619,7 @@ export const createServer = () => {
       );
       return {
         content: [
-          { type: "text", text: `LLM sampling result: ${result.content.text}` },
+          { type: "text", text: `LLM sampling result: ${(result.content as any).text}` },
         ],
       };
     }
