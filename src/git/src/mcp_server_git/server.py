@@ -354,6 +354,23 @@ async def serve(repository: Path | None) -> None:
     async def call_tool(name: str, arguments: dict) -> list[TextContent]:
         repo_path = Path(arguments["repo_path"])
         
+        # Validate repo_path to prevent path traversal attacks
+        try:
+            # Resolve to absolute path and normalize
+            repo_path = repo_path.resolve()
+            
+            # Verify the path doesn't contain suspicious patterns
+            if '..' in repo_path.parts:
+                return [TextContent(
+                    type="text",
+                    text="Error: Invalid repository path - path traversal detected"
+                )]
+        except (ValueError, OSError) as e:
+            return [TextContent(
+                type="text",
+                text=f"Error: Invalid repository path - {str(e)}"
+            )]
+        
         # Handle git init separately since it doesn't require an existing repo
         if name == GitTools.INIT:
             result = git_init(str(repo_path))
@@ -363,7 +380,18 @@ async def serve(repository: Path | None) -> None:
             )]
             
         # For all other commands, we need an existing repo
-        repo = git.Repo(repo_path)
+        try:
+            repo = git.Repo(repo_path)
+        except git.InvalidGitRepositoryError:
+            return [TextContent(
+                type="text",
+                text=f"Error: {repo_path} is not a valid Git repository"
+            )]
+        except Exception as e:
+            return [TextContent(
+                type="text",
+                text=f"Error: Failed to access repository - {str(e)}"
+            )]
 
         match name:
             case GitTools.STATUS:

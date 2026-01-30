@@ -115,6 +115,39 @@ async def fetch_url(
     Fetch the URL and return the content in a form ready for the LLM, as well as a prefix string with status information.
     """
     from httpx import AsyncClient, HTTPError
+    from ipaddress import ip_address, IPv4Address, IPv6Address
+    
+    # Validate URL to prevent SSRF attacks
+    parsed = urlparse(url)
+    
+    # Block file:// and other non-http schemes
+    if parsed.scheme not in ('http', 'https'):
+        raise McpError(ErrorData(
+            code=INVALID_PARAMS,
+            message=f"Invalid URL scheme: {parsed.scheme}. Only http and https are allowed."
+        ))
+    
+    # Block localhost and private IP ranges
+    hostname = parsed.hostname
+    if hostname:
+        # Check for localhost variants
+        if hostname.lower() in ('localhost', '127.0.0.1', '::1', '0.0.0.0'):
+            raise McpError(ErrorData(
+                code=INVALID_PARAMS,
+                message="Access to localhost is not allowed"
+            ))
+        
+        # Check for private IP ranges
+        try:
+            ip = ip_address(hostname)
+            if ip.is_private or ip.is_loopback or ip.is_link_local:
+                raise McpError(ErrorData(
+                    code=INVALID_PARAMS,
+                    message="Access to private IP addresses is not allowed"
+                ))
+        except ValueError:
+            # Not an IP address, which is fine (it's a domain name)
+            pass
 
     async with AsyncClient(proxies=proxy_url) as client:
         try:
@@ -146,6 +179,7 @@ async def fetch_url(
         page_raw,
         f"Content type {content_type} cannot be simplified to markdown, but here is the raw content:\n",
     )
+
 
 
 class Fetch(BaseModel):
