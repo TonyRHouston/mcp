@@ -163,6 +163,8 @@ Add this to your claude_desktop_config.json:
 
 The server can be configured using the following environment variables:
 
+##### File System Storage (Default)
+
 ```json
 {
   "mcpServers": {
@@ -173,6 +175,7 @@ The server can be configured using the following environment variables:
         "@modelcontextprotocol/server-memory"
       ],
       "env": {
+        "STORAGE_TYPE": "filesystem",
         "MEMORY_FILE_PATH": "/path/to/custom/memory.json"
       }
     }
@@ -180,7 +183,64 @@ The server can be configured using the following environment variables:
 }
 ```
 
+- `STORAGE_TYPE`: Storage backend type (default: `filesystem`). Options: `filesystem`, `googledrive`
 - `MEMORY_FILE_PATH`: Path to the memory storage JSON file (default: `memory.json` in the server directory)
+
+##### Google Drive Storage
+
+To use Google Drive as the storage backend, you need to:
+
+1. Create a Google Cloud Project and enable the Google Drive API
+2. Create a Service Account and download the credentials JSON file
+3. Share your Google Drive folder with the service account email
+4. Configure the memory server with Google Drive credentials:
+
+```json
+{
+  "mcpServers": {
+    "memory": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-memory"
+      ],
+      "env": {
+        "STORAGE_TYPE": "googledrive",
+        "GOOGLE_DRIVE_CREDENTIALS": "{\"type\":\"service_account\",\"project_id\":\"...\",\"private_key\":\"...\",\"client_email\":\"...\"}",
+        "GOOGLE_DRIVE_FILENAME": "mcp-memory.json"
+      }
+    }
+  }
+}
+```
+
+- `STORAGE_TYPE`: Set to `googledrive` to enable Google Drive storage
+- `GOOGLE_DRIVE_CREDENTIALS`: JSON string containing Google service account credentials
+- `GOOGLE_DRIVE_FILENAME`: Name of the file in Google Drive (default: `mcp-memory.json`)
+
+**Setting up Google Drive Storage:**
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Create a new project or select an existing one
+3. Enable the Google Drive API for your project
+4. Create a Service Account:
+   - Go to "IAM & Admin" > "Service Accounts"
+   - Click "Create Service Account"
+   - Give it a name and click "Create"
+   - Skip granting roles and click "Done"
+5. Create and download credentials:
+   - Click on the service account you just created
+   - Go to "Keys" tab
+   - Click "Add Key" > "Create new key"
+   - Choose JSON format and download the file
+6. Share your Google Drive folder:
+   - Open Google Drive
+   - Create a folder or use an existing one where you want to store the memory file
+   - Right-click the folder and select "Share"
+   - Add the service account email (from the JSON file, it looks like `xxx@xxx.iam.gserviceaccount.com`)
+   - Give it "Editor" permission
+7. Copy the contents of the downloaded JSON file and set it as the `GOOGLE_DRIVE_CREDENTIALS` environment variable (as a single-line JSON string)
+
 
 # VS Code Installation Instructions
 
