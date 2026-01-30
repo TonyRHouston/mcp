@@ -62,6 +62,7 @@ The implementation introduces a clean abstraction layer that separates storage c
 - ✅ File ID caching to reduce API calls
 - ✅ Lazy initialization of Google Drive service
 - ✅ Retry logic for transient failures
+- ✅ Support for shared drives and folder-specific storage
 
 ### Reliability Features
 - ✅ Graceful degradation (returns empty graph on errors)
@@ -79,6 +80,7 @@ The implementation introduces a clean abstraction layer that separates storage c
 | `MEMORY_FILE_PATH` | `memory.json` | Path for filesystem storage |
 | `GOOGLE_DRIVE_CREDENTIALS` | - | Service Account JSON credentials |
 | `GOOGLE_DRIVE_FILENAME` | `mcp-memory.json` | Filename in Google Drive |
+| `GOOGLE_DRIVE_FOLDER_ID` | - | **Required for service accounts** - Folder ID to store files in |
 
 ### Example Configurations
 
@@ -104,12 +106,15 @@ The implementation introduces a clean abstraction layer that separates storage c
       "env": {
         "STORAGE_TYPE": "googledrive",
         "GOOGLE_DRIVE_CREDENTIALS": "{...}",
-        "GOOGLE_DRIVE_FILENAME": "mcp-memory.json"
+        "GOOGLE_DRIVE_FILENAME": "mcp-memory.json",
+        "GOOGLE_DRIVE_FOLDER_ID": "1a2b3c4d5e6f7g8h9i0j"
       }
     }
   }
 }
 ```
+
+**Note**: Service accounts don't have their own storage quota. The `GOOGLE_DRIVE_FOLDER_ID` must point to a folder that has been shared with the service account.
 
 ## Testing
 
