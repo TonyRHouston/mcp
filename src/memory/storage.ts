@@ -145,8 +145,10 @@ export class GoogleDriveStorage implements StorageBackend {
     }
 
     try {
-      // Escape single quotes in filename to prevent injection
-      const escapedFileName = this.fileName.replace(/'/g, "\\'");
+      // Escape backslashes and single quotes in filename to prevent injection
+      const escapedFileName = this.fileName
+        .replace(/\\/g, "\\\\")  // Escape backslashes first
+        .replace(/'/g, "\\'");    // Then escape single quotes
       
       const response = await this.driveService.files.list({
         q: `name='${escapedFileName}' and trashed=false`,
