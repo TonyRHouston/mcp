@@ -63,6 +63,52 @@ def get_robots_txt_url(url: str) -> str:
     return robots_url
 
 
+def validate_url_for_ssrf(url: str) -> None:
+    """
+    Validate URL to prevent SSRF attacks.
+    Raises McpError if the URL is invalid or points to a private/internal resource.
+    """
+    from ipaddress import ip_address
+    
+    parsed = urlparse(url)
+    
+    # Block file:// and other non-http schemes
+    if parsed.scheme not in ('http', 'https'):
+        raise McpError(ErrorData(
+            code=INVALID_PARAMS,
+            message=f"Invalid URL scheme: {parsed.scheme}. Only http and https are allowed."
+        ))
+    
+    # Validate hostname exists
+    hostname = parsed.hostname
+    if not hostname:
+        raise McpError(ErrorData(
+            code=INVALID_PARAMS,
+            message="URL must contain a valid hostname"
+        ))
+    
+    # Check for localhost variants
+    if hostname.lower() == 'localhost':
+        raise McpError(ErrorData(
+            code=INVALID_PARAMS,
+            message="Access to localhost is not allowed"
+        ))
+    
+    # Check for private IP ranges
+    try:
+        ip = ip_address(hostname)
+        if ip.is_private or ip.is_loopback or ip.is_link_local:
+            raise McpError(ErrorData(
+                code=INVALID_PARAMS,
+                message="Access to private IP addresses is not allowed"
+            ))
+    except ValueError:
+        # Not an IP address, which is fine (it's a domain name)
+        # Note: DNS rebinding attacks are still possible, but require
+        # additional mitigation at the connection/transport level
+        pass
+
+
 async def check_may_autonomously_fetch_url(url: str, user_agent: str, proxy_url: str | None = None) -> None:
     """
     Check if the URL can be fetched by the user agent according to the robots.txt file.
@@ -71,12 +117,14 @@ async def check_may_autonomously_fetch_url(url: str, user_agent: str, proxy_url:
     from httpx import AsyncClient, HTTPError
 
     robot_txt_url = get_robots_txt_url(url)
+    
+    # Validate robots.txt URL to prevent SSRF
+    validate_url_for_ssrf(robot_txt_url)
 
-    async with AsyncClient(proxies=proxy_url) as client:
+    async with AsyncClient(proxies=proxy_url, follow_redirects=False) as client:
         try:
             response = await client.get(
                 robot_txt_url,
-                follow_redirects=True,
                 headers={"User-Agent": user_agent},
             )
         except HTTPError:
@@ -115,45 +163,14 @@ async def fetch_url(
     Fetch the URL and return the content in a form ready for the LLM, as well as a prefix string with status information.
     """
     from httpx import AsyncClient, HTTPError
-    from ipaddress import ip_address, IPv4Address, IPv6Address
     
     # Validate URL to prevent SSRF attacks
-    parsed = urlparse(url)
-    
-    # Block file:// and other non-http schemes
-    if parsed.scheme not in ('http', 'https'):
-        raise McpError(ErrorData(
-            code=INVALID_PARAMS,
-            message=f"Invalid URL scheme: {parsed.scheme}. Only http and https are allowed."
-        ))
-    
-    # Block localhost and private IP ranges
-    hostname = parsed.hostname
-    if hostname:
-        # Check for localhost variants
-        if hostname.lower() in ('localhost', '127.0.0.1', '::1', '0.0.0.0'):
-            raise McpError(ErrorData(
-                code=INVALID_PARAMS,
-                message="Access to localhost is not allowed"
-            ))
-        
-        # Check for private IP ranges
-        try:
-            ip = ip_address(hostname)
-            if ip.is_private or ip.is_loopback or ip.is_link_local:
-                raise McpError(ErrorData(
-                    code=INVALID_PARAMS,
-                    message="Access to private IP addresses is not allowed"
-                ))
-        except ValueError:
-            # Not an IP address, which is fine (it's a domain name)
-            pass
+    validate_url_for_ssrf(url)
 
-    async with AsyncClient(proxies=proxy_url) as client:
+    async with AsyncClient(proxies=proxy_url, follow_redirects=False) as client:
         try:
             response = await client.get(
                 url,
-                follow_redirects=True,
                 headers={"User-Agent": user_agent},
                 timeout=30,
             )

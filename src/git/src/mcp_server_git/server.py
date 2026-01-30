@@ -352,24 +352,36 @@ async def serve(repository: Path | None) -> None:
 
     @server.call_tool()
     async def call_tool(name: str, arguments: dict) -> list[TextContent]:
-        repo_path = Path(arguments["repo_path"])
+        repo_path_str = arguments["repo_path"]
         
         # Validate repo_path to prevent path traversal attacks
+        # Check for suspicious patterns in the original path before normalization
+        if '..' in repo_path_str or '\x00' in repo_path_str:
+            return [TextContent(
+                type="text",
+                text="Error: Invalid repository path - path traversal pattern detected"
+            )]
+        
         try:
-            # Resolve to absolute path and normalize
-            repo_path = repo_path.resolve()
-            
-            # Verify the path doesn't contain suspicious patterns
-            if '..' in repo_path.parts:
-                return [TextContent(
-                    type="text",
-                    text="Error: Invalid repository path - path traversal detected"
-                )]
+            repo_path = Path(repo_path_str).resolve()
         except (ValueError, OSError) as e:
             return [TextContent(
                 type="text",
                 text=f"Error: Invalid repository path - {str(e)}"
             )]
+        
+        # If a repository was specified at startup, validate that the requested path
+        # is either that repository or within its directory tree
+        if repository is not None:
+            try:
+                repo_path.relative_to(repository.resolve())
+            except ValueError:
+                # repo_path is not relative to the allowed repository
+                if repo_path != repository.resolve():
+                    return [TextContent(
+                        type="text",
+                        text=f"Error: Access denied - path is outside allowed repository: {repository}"
+                    )]
         
         # Handle git init separately since it doesn't require an existing repo
         if name == GitTools.INIT:
