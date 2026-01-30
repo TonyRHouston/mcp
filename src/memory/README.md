@@ -201,8 +201,9 @@ To use Google Drive as the storage backend, you need to:
 
 1. Create a Google Cloud Project and enable the Google Drive API
 2. Create a Service Account and download the credentials JSON file
-3. Share your Google Drive folder with the service account email
-4. Configure the memory server with Google Drive credentials:
+3. **Create a folder in your Google Drive and share it with the service account email** (service accounts don't have their own storage)
+4. Get the folder ID from the folder URL
+5. Configure the memory server with Google Drive credentials:
 
 ```json
 {

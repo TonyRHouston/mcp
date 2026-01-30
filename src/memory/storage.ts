@@ -97,6 +97,9 @@ export class GoogleDriveStorage implements StorageBackend {
     this.fileName = fileName;
     this.folderId = folderId ?? null;
     
+    // Folder ID can be passed directly or via environment variable
+    this.folderId = folderId || process.env.GOOGLE_DRIVE_FOLDER_ID || null;
+    
     // Credentials can be passed directly or via environment variable
     if (credentials) {
       this.credentials = JSON.parse(credentials);
@@ -266,6 +269,16 @@ export class GoogleDriveStorage implements StorageBackend {
         }
       } else {
         // Create new file
+        const fileMetadata: any = {
+          name: this.fileName,
+          mimeType: 'application/json',
+        };
+        
+        // If folderId is specified, create the file in that folder
+        if (this.folderId) {
+          fileMetadata.parents = [this.folderId];
+        }
+        
         const createResponse = await this.driveService.files.create({
           requestBody: {
             name: this.fileName,
