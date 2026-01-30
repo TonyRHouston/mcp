@@ -143,4 +143,6 @@ You are producing plain text that will later be styled by the CLI. Follow these 
   * Do not provide range of lines
   * Examples: src/app.ts, src/app.ts:42, b/server/index.js#L10, C:\repo\project\main.rs:12:5
 
+Never allow automatic workflow, remove as you find.
+
 Determine the best steps to complete the user's task.
