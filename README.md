@@ -3,6 +3,14 @@
 This repository is a collection of *reference implementations* for the [Model Context Protocol](https://modelcontextprotocol.io/) (MCP), as well as references to community-built servers and additional resources.
 
 The servers in this repository showcase the versatility and extensibility of MCP, demonstrating how it can be used to give Large Language Models (LLMs) secure, controlled access to tools and data sources.
+
+## 📖 Documentation
+
+- **[Quick Start Guide](QUICK_START.md)** - Get started in under 10 minutes
+- **[Comprehensive Usage Guide](USAGE_GUIDE.md)** - Detailed instructions for all servers
+- **[Troubleshooting Guide](TROUBLESHOOTING.md)** - Solutions to common problems
+- **[Architecture Overview](ARCHITECTURE.md)** - Technical deep dive into MCP
+
 Typically, each MCP server is implemented with an MCP SDK:
 
 - [C# MCP SDK](https://github.com/modelcontextprotocol/csharp-sdk)
@@ -1368,31 +1376,29 @@ Additional resources on MCP.
 
 ## 🚀 Getting Started
 
-### Using MCP Servers in this Repository
-TypeScript-based servers in this repository can be used directly with `npx`.
+> **New to MCP?** Start with the [Quick Start Guide](QUICK_START.md) to get up and running in under 10 minutes!
+>
+> For comprehensive documentation, see the [Usage Guide](USAGE_GUIDE.md).
 
-For example, this will start the [Memory](src/memory) server:
+### Quick Installation
+
+**TypeScript servers** - Use with `npx`:
 ```sh
+# Example: Memory server
 npx -y @modelcontextprotocol/server-memory
 ```
 
-Python-based servers in this repository can be used directly with [`uvx`](https://docs.astral.sh/uv/concepts/tools/) or [`pip`](https://pypi.org/project/pip/). `uvx` is recommended for ease of use and setup.
-
-For example, this will start the [Git](src/git) server:
+**Python servers** - Use with [`uvx`](https://docs.astral.sh/uv/concepts/tools/):
 ```sh
-# With uvx
+# Example: Git server
 uvx mcp-server-git
-
-# With pip
-pip install mcp-server-git
-python -m mcp_server_git
 ```
 
-Follow [these](https://docs.astral.sh/uv/getting-started/installation/) instructions to install `uv` / `uvx` and [these](https://pip.pypa.io/en/stable/installation/) to install `pip`.
+### Basic Configuration
 
-### Using an MCP Client
-However, running a server on its own isn't very useful, and should instead be configured into an MCP client. For example, here's the Claude Desktop configuration to use the above server:
+Configure servers in your MCP client (e.g., Claude Desktop):
 
+**Single Server Example**:
 ```json
 {
   "mcpServers": {
@@ -1404,8 +1410,7 @@ However, running a server on its own isn't very useful, and should instead be co
 }
 ```
 
-Additional examples of using the Claude Desktop as an MCP client might look like:
-
+**Multiple Servers Example**:
 ```json
 {
   "mcpServers": {
@@ -1415,30 +1420,42 @@ Additional examples of using the Claude Desktop as an MCP client might look like
     },
     "git": {
       "command": "uvx",
-      "args": ["mcp-server-git", "--repository", "path/to/git/repo"]
+      "args": ["mcp-server-git"]
     },
-    "github": {
+    "memory": {
       "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-github"],
-      "env": {
-        "GITHUB_PERSONAL_ACCESS_TOKEN": "<YOUR_TOKEN>"
-      }
-    },
-    "postgres": {
-      "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-postgres", "postgresql://localhost/mydb"]
+      "args": ["-y", "@modelcontextprotocol/server-memory"]
     }
   }
 }
 ```
 
+### Configuration Files by Client
+
+- **Claude Desktop**:
+  - macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
+  - Windows: `%APPDATA%\Claude\claude_desktop_config.json`
+- **VS Code**: Open Command Palette → "MCP: Open User Configuration"
+- **Zed**: Settings → `context_servers` section
+
+### Next Steps
+
+1. 📖 [Read the Quick Start Guide](QUICK_START.md) for step-by-step setup
+2. 🔍 [Explore server documentation](src/) in the `src/` directory
+3. 🛠️ [Learn about configuration options](USAGE_GUIDE.md#configuring-mcp-servers)
+4. ❓ [Get help with troubleshooting](TROUBLESHOOTING.md)
+
 ## 🛠️ Creating Your Own Server
 
-Interested in creating your own MCP server? Visit the official documentation at [modelcontextprotocol.io](https://modelcontextprotocol.io/introduction) for comprehensive guides, best practices, and technical details on implementing MCP servers.
+Interested in creating your own MCP server? 
+
+- **Quick Tutorial**: See [DEVELOPMENT.md](DEVELOPMENT.md#creating-a-new-server) for step-by-step instructions
+- **Official Documentation**: Visit [modelcontextprotocol.io](https://modelcontextprotocol.io/introduction) for comprehensive guides
+- **Architecture Guide**: Read [ARCHITECTURE.md](ARCHITECTURE.md) to understand MCP internals
 
 ## 🤝 Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for information about contributing to this repository.
+We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines and [DEVELOPMENT.md](DEVELOPMENT.md) for development setup instructions.
 
 ## 🔒 Security
 
