@@ -24,32 +24,47 @@ export function addAuthEndpoints(app: express.Application, config: AuthConfig): 
     return;
   }
 
-  // TODO: use github(?)
+  // OAuth configuration must be provided via environment variables
+  // This is a reference implementation - configure with your OAuth provider
+  const authorizationUrl = process.env.OAUTH_AUTHORIZATION_URL;
+  const tokenUrl = process.env.OAUTH_TOKEN_URL;
+  const revocationUrl = process.env.OAUTH_REVOCATION_URL;
+  const issuerUrl = process.env.OAUTH_ISSUER_URL;
+  const baseUrl = process.env.OAUTH_BASE_URL;
+  const serviceDocUrl = process.env.OAUTH_SERVICE_DOC_URL;
+
+  if (!authorizationUrl || !tokenUrl || !issuerUrl || !baseUrl || !serviceDocUrl) {
+    throw new Error(
+      'OAuth authentication is enabled but required environment variables are not set. ' +
+      'Please configure: OAUTH_AUTHORIZATION_URL, OAUTH_TOKEN_URL, OAUTH_ISSUER_URL, ' +
+      'OAUTH_BASE_URL, and OAUTH_SERVICE_DOC_URL'
+    );
+  }
+
   const proxyProvider = new ProxyOAuthServerProvider({
       endpoints: {
-          authorizationUrl: "https://auth.external.com/oauth2/v1/authorize",
-          tokenUrl: "https://auth.external.com/oauth2/v1/token",
-          revocationUrl: "https://auth.external.com/oauth2/v1/revoke",
+          authorizationUrl,
+          tokenUrl,
+          revocationUrl: revocationUrl || undefined,
       },
       verifyAccessToken: async (token) => {
-          return {
-              token,
-              clientId: "123",
-              scopes: ["openid", "email", "profile"],
-          }
+          // WARNING: This is a minimal implementation for demonstration purposes.
+          // In production, you MUST validate tokens against your OAuth provider.
+          // Example: Call your OAuth provider's introspection endpoint or validate JWT signature
+          throw new Error('verifyAccessToken must be implemented with proper token validation');
       },
       getClient: async (client_id) => {
-          return {
-              client_id,
-              redirect_uris: ["http://localhost:3000/callback"],
-          }
+          // WARNING: This is a minimal implementation for demonstration purposes.
+          // In production, you MUST validate client_id and retrieve actual client configuration
+          // from your OAuth provider or database.
+          throw new Error('getClient must be implemented with proper client validation');
       }
   })
 
   app.use(mcpAuthRouter({
       provider: proxyProvider,
-      issuerUrl: new URL("https://auth.external.com"),
-      baseUrl: new URL("https://mcp.example.com"),
-      serviceDocumentationUrl: new URL("https://docs.example.com/"),
+      issuerUrl: new URL(issuerUrl),
+      baseUrl: new URL(baseUrl),
+      serviceDocumentationUrl: new URL(serviceDocUrl),
   }))
 }
