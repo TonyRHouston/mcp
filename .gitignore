@@ -1,4 +1,10 @@
-gcloud-ftp
+*secrets*
+**/secrets*
+*token*
+**/token*
+*.env
+cache/*
+*/cache/*
 # Logs
 logs
 *.log
