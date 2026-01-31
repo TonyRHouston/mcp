@@ -16,6 +16,7 @@ import { zodToJsonSchema } from "zod-to-json-schema";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
+// Configuration constants
 const DEFAULT_FTP_HOST = "127.0.0.1";
 const FTP_PORT = Number.parseInt(process.env.FTP_PORT || process.env.PORT || "1821", 10);
 const FTP_USER = process.env.FTP_USER || "user";
@@ -32,6 +33,14 @@ const GCLOUD_FTP_ROOT =
   process.env.GCLOUD_FTP_ROOT || path.resolve(MODULE_DIR, "../../../gcloud-ftp");
 const GCLOUD_FTP_ENTRY =
   process.env.GCLOUD_FTP_ENTRY || path.join(GCLOUD_FTP_ROOT, "dist", "index.js");
+const DEBUG = process.env.MCP_FTP_DEBUG === "true";
+
+// Helper function for debug logging
+function debugLog(message: string, ...args: unknown[]): void {
+  if (DEBUG) {
+    console.error(`[ftp-mcp] ${message}`, ...args);
+  }
+}
 
 let ftpHost = process.env.FTP_HOST || DEFAULT_FTP_HOST;
 let gcloudFtpProcess: ReturnType<typeof spawn> | null = null;
@@ -118,6 +127,7 @@ async function waitForPort(host: string, port: number, timeoutMs: number): Promi
 
 async function ensureGcloudFtpRunning(): Promise<void> {
   if (!USE_GCLOUD_FTP) {
+    debugLog("gcloud-ftp integration disabled");
     return;
   }
 
@@ -129,6 +139,7 @@ async function ensureGcloudFtpRunning(): Promise<void> {
   }
 
   if (await canConnect(ftpHost, FTP_PORT)) {
+    debugLog(`FTP server already running on ${ftpHost}:${FTP_PORT}`);
     return;
   }
 
@@ -137,6 +148,8 @@ async function ensureGcloudFtpRunning(): Promise<void> {
       `gcloud-ftp entry not found at ${GCLOUD_FTP_ENTRY}. Set GCLOUD_FTP_ROOT/GCLOUD_FTP_ENTRY or build gcloud-ftp first.`
     );
   }
+
+  debugLog(`Starting gcloud-ftp from ${GCLOUD_FTP_ENTRY}...`);
 
   const env = {
     ...process.env,
@@ -168,6 +181,7 @@ async function ensureGcloudFtpRunning(): Promise<void> {
 
   try {
     await Promise.race([waitForPort(ftpHost, FTP_PORT, GCLOUD_FTP_STARTUP_TIMEOUT), exitPromise]);
+    debugLog(`gcloud-ftp started successfully on ${ftpHost}:${FTP_PORT}`);
   } catch (error) {
     stopGcloudFtpIfSpawned();
     const detail = error instanceof Error ? error.message : String(error);
@@ -186,6 +200,7 @@ function stopGcloudFtpIfSpawned(): void {
 async function withClient<T>(fn: (client: Client) => Promise<T>): Promise<T> {
   const client = new Client(FTP_TIMEOUT);
   try {
+    debugLog(`Connecting to FTP server at ${ftpHost}:${FTP_PORT}...`);
     await client.access({
       host: ftpHost,
       port: FTP_PORT,
@@ -193,9 +208,15 @@ async function withClient<T>(fn: (client: Client) => Promise<T>): Promise<T> {
       password: FTP_PASS,
       secure: FTP_SECURE,
     });
+    debugLog("FTP connection established");
     return await fn(client);
+  } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    console.error(`FTP operation failed: ${errorMsg}`);
+    throw error;
   } finally {
     client.close();
+    debugLog("FTP connection closed");
   }
 }
 
@@ -421,10 +442,20 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 });
 
 async function main() {
-  await ensureGcloudFtpRunning();
-  const transport = new StdioServerTransport();
-  await server.connect(transport);
-  console.error(`FTP MCP server running (host=${ftpHost} port=${FTP_PORT})`);
+  try {
+    debugLog("Starting FTP MCP Server...");
+    debugLog(`Configuration: host=${ftpHost} port=${FTP_PORT} secure=${FTP_SECURE}`);
+    debugLog(`Using gcloud-ftp: ${USE_GCLOUD_FTP}`);
+    
+    await ensureGcloudFtpRunning();
+    const transport = new StdioServerTransport();
+    await server.connect(transport);
+    console.error(`FTP MCP server running (host=${ftpHost} port=${FTP_PORT})`);
+  } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    console.error(`Failed to start FTP MCP server: ${errorMsg}`);
+    throw error;
+  }
 }
 
 main().catch((error) => {
