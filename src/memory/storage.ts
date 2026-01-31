@@ -3,6 +3,15 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
+// Type guard for Node.js filesystem errors
+interface NodeError extends Error {
+  code?: string;
+}
+
+function isNodeError(error: unknown): error is NodeError {
+  return error instanceof Error && 'code' in error;
+}
+
 export interface Entity {
   name: string;
   entityType: string;
@@ -59,7 +68,7 @@ export class FileSystemStorage implements StorageBackend {
         return graph;
       }, { entities: [], relations: [] });
     } catch (error) {
-      if (error instanceof Error && 'code' in error && (error as any).code === "ENOENT") {
+      if (isNodeError(error) && error.code === "ENOENT") {
         return { entities: [], relations: [] };
       }
       throw error;
@@ -215,10 +224,14 @@ export class GoogleDriveStorage implements StorageBackend {
       }, { entities: [], relations: [] });
     } catch (error) {
       // If file doesn't exist, return empty graph
-      if ((error as any).code === 404) {
-        // Clear cache since file doesn't exist
-        this.fileIdCache = null;
-        return { entities: [], relations: [] };
+      // Google Drive API errors have a response.status property
+      if (error && typeof error === 'object' && 'response' in error) {
+        const gaxiosError = error as { response?: { status?: number } };
+        if (gaxiosError.response?.status === 404) {
+          // Clear cache since file doesn't exist
+          this.fileIdCache = null;
+          return { entities: [], relations: [] };
+        }
       }
       const errorMessage = error instanceof Error ? error.message : String(error);
       throw new Error(`Failed to load graph from Google Drive: ${errorMessage}`);
@@ -260,10 +273,14 @@ export class GoogleDriveStorage implements StorageBackend {
           });
         } catch (updateError) {
           // If update fails with 404, clear cache and retry as create
-          if ((updateError as any).code === 404) {
-            this.fileIdCache = null;
-            await this.saveGraph(graph);
-            return;
+          // Google Drive API errors have a response.status property
+          if (updateError && typeof updateError === 'object' && 'response' in updateError) {
+            const gaxiosError = updateError as { response?: { status?: number } };
+            if (gaxiosError.response?.status === 404) {
+              this.fileIdCache = null;
+              await this.saveGraph(graph);
+              return;
+            }
           }
           throw updateError;
         }
