@@ -184,6 +184,15 @@ export async function applyFileEdits(
 
     // If exact match exists, use it
     if (modifiedContent.includes(normalizedOld)) {
+      // Check if the old text appears multiple times (potential ambiguity)
+      const firstIndex = modifiedContent.indexOf(normalizedOld);
+      const lastIndex = modifiedContent.lastIndexOf(normalizedOld);
+      if (firstIndex !== lastIndex) {
+        throw new Error(
+          'Ambiguous edit: old text appears multiple times in file. ' +
+          'Please be more specific or edit one occurrence at a time.'
+        );
+      }
       modifiedContent = modifiedContent.replace(normalizedOld, normalizedNew);
       continue;
     }

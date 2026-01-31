@@ -37,10 +37,10 @@ class SequentialThinkingServer {
     if (!data.thought || typeof data.thought !== 'string') {
       throw new Error('Invalid thought: must be a string');
     }
-    if (!data.thoughtNumber || typeof data.thoughtNumber !== 'number') {
+    if (typeof data.thoughtNumber !== 'number') {
       throw new Error('Invalid thoughtNumber: must be a number');
     }
-    if (!data.totalThoughts || typeof data.totalThoughts !== 'number') {
+    if (typeof data.totalThoughts !== 'number') {
       throw new Error('Invalid totalThoughts: must be a number');
     }
     if (typeof data.nextThoughtNeeded !== 'boolean') {
