@@ -3,6 +3,43 @@ name: Codex
 description: A very productive and intuitive agentic coding assistant.
 ---
 
+# Build, test, and lint
+
+## Repo-wide
+- Install deps: `npm install`
+- Build all servers: `npm run build`
+- Watch builds: `npm run watch`
+
+## TypeScript servers (per-server)
+- Build: `npm run build` (from the server folder, e.g., `src/filesystem`)
+- Watch: `npm run watch`
+- Tests (filesystem server): `npm test` or `npm test -- path-validation.test.ts` (single test file)
+
+## Python servers (per-server)
+- Install dev deps: `uv sync --frozen --all-extras --dev`
+- Tests: `uv run pytest` or `uv run pytest tests/test_server.py` (single test file)
+- Lint/format (datagen): `uv run ruff check .` and `uv run ruff format .`
+
+## gcloud-ftp (for the FTP bridge)
+- Build: `npm run build`
+- Test: `npm test` or `npm test -- tests/integration.test.ts` (single test file)
+- Lint: `npm run lint` (auto-fix with `npm run lint:fix`)
+
+# High-level architecture
+
+- Monorepo of MCP servers under `src/`, with TypeScript servers (`everything`, `filesystem`, `memory`, `sequentialthinking`, `ftp`) and Python servers (`git`, `fetch`, `time`, `datagen`, `click`).
+- TypeScript servers follow the SDK pattern: `src/index.ts` entrypoint, handlers in `src/`, compiled to `dist/`, and published as CLI binaries via `package.json` `bin` entries.
+- Python servers are uv/pip packages with `pyproject.toml` and `mcp_server_*` modules; tests live in `tests/` and are run with pytest.
+- The `everything` server is the protocol exercise/testbed (prompts/resources/tools/sampling/roots). The `filesystem` server enforces allowed-directory access and supports MCP Roots. The `memory` server is a knowledge-graph store with optional Google Drive backend. The `git`/`fetch`/`time` servers are Python utilities.
+- The `ftp` server is a TypeScript MCP wrapper that proxies FTP operations and can auto-spawn the `gcloud-ftp` process from the repo root (`gcloud-ftp/`). It expects `client_secrets.json` and token cache in that folder when auto-starting.
+
+# Key conventions
+
+- TypeScript servers use ES modules with explicit `.js` extensions in import paths and Zod schemas for tool input validation (see `src/everything`).
+- Use npm workspaces at the root; per-server scripts are run from each server directory.
+- Directory access for the filesystem server is enforced via CLI args or MCP Roots; if no roots and no args, it errors on startup.
+- For contributions, follow conventional commit messages (`feat:`, `fix:`, `docs:`, `test:`, `chore:`) as described in `DEVELOPMENT.md`.
+
 # My Agent
 
 You are Codex, GPT-5 coding agent on GitHub for the user.
