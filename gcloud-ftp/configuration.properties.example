@@ -1,0 +1,77 @@
+# Google Drive FTP Adapter Configuration
+# Copy this file to .env or configuration.properties in the root directory
+
+# ==================== Application Settings ====================
+
+# Account identifier (used for cache and credentials storage)
+# Each account will have its own database and OAuth token
+account=default
+
+# TCP port where the FTP server will listen for incoming connections
+port=1821
+
+# Server binding address (use 0.0.0.0 to listen on all interfaces)
+server=0.0.0.0
+
+# OAuth authentication server port
+auth.port=8093
+
+# ==================== Logging ====================
+
+# Log level: error, warn, info, debug
+LOG_LEVEL=info
+
+# ==================== FTP Anonymous Access ====================
+
+# Enable anonymous FTP access (true/false)
+ftp.anonymous.enabled=false
+
+# Home directory for anonymous users (leave empty for root)
+ftp.anonymous.home=
+
+# Anonymous user permissions (pipe-separated)
+# Available: pwd, cd, dir, put, get, rename, delete, mkdir, rmdir, append
+ftp.anonymous.rights=pwd|cd|dir
+
+# ==================== FTP User Accounts ====================
+
+# Primary FTP user credentials
+ftp.user=user
+ftp.pass=user
+
+# Home directory for primary user (leave empty for root)
+ftp.home=
+
+# User permissions (pipe-separated)
+# Available: pwd, cd, dir, put, get, rename, delete, mkdir, rmdir, append
+ftp.rights=pwd|cd|dir|put|get|rename|delete|mkdir|rmdir|append
+
+# Additional users (add as many as needed: user2, user3, etc.)
+# Uncomment and configure as needed:
+
+#ftp.user2=admin
+#ftp.pass2=admin123
+#ftp.home2=/admin
+#ftp.rights2=pwd|cd|dir|put|get|rename|delete|mkdir|rmdir|append
+
+#ftp.user3=readonly
+#ftp.pass3=readonly123
+#ftp.home3=
+#ftp.rights3=pwd|cd|dir|get
+
+# ==================== Advanced Settings ====================
+
+# Illegal characters for your file system (regex pattern)
+# Files with these characters will be encoded to underscore
+os.illegalCharacters=\\/|[\\x00-\\x1F\\x7F]|\\`|\\?|\\*|\\\\|\\<|\\>|\\||\\"|\\:
+
+# ==================== Google Drive API ====================
+# Note: You need to:
+# 1. Create a Google Cloud Project
+# 2. Enable Google Drive API
+# 3. Create OAuth 2.0 credentials
+# 4. Download credentials as 'client_secrets.json'
+# 5. Place client_secrets.json in the project root directory
+#
+# On first run, you'll be prompted to authorize the application
+# in your web browser. The OAuth token will be saved for future use.

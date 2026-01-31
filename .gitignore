@@ -4,7 +4,7 @@
 **/token*
 *.env
 cache/*
-*/cache/*
+**/cache/*
 # Logs
 logs
 *.log

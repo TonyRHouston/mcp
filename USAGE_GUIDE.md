@@ -544,6 +544,101 @@ npx -y @modelcontextprotocol/server-sequential-thinking
 }
 ```
 
+### 8. FTP Server (gcloud-ftp Bridge)
+
+**Purpose**: FTP tools backed by the gcloud-ftp Google Drive adapter
+
+**Installation**:
+```bash
+npx -y @modelcontextprotocol/server-ftp
+```
+
+**Prerequisites**:
+- Build `gcloud-ftp` so `dist/index.js` exists
+- Place `client_secrets.json` in the gcloud-ftp root and complete OAuth once
+ - Full test checklist: [FTP_FULL_TEST.md](FTP_FULL_TEST.md)
+
+**One-time Authorization (gcloud-ftp)**:
+1. `cd /absolute/path/to/gcloud-ftp`
+2. `npm install`
+3. `npm run build`
+4. `node dist/index.js`
+5. Open the printed URL, approve access, paste the code into the prompt
+6. Confirm a token file was created at `cache/token-<account>.json`, then stop the server
+
+**Features**:
+- Tools: ftp_list, ftp_download, ftp_upload, ftp_delete, ftp_rename, ftp_mkdir, ftp_rmdir, ftp_stat, ftp_pwd
+- Auto-starts the local gcloud-ftp process when needed
+- Uses standard FTP credentials (default: user/user)
+
+**Use Cases**:
+- Access Google Drive through FTP via MCP tools
+- Automate uploads/downloads and directory management
+- Integrate Drive-backed workflows into IDE/CLI agents
+
+**Configuration Examples**:
+
+**VS Code** (`.vscode/mcp.json`)
+```json
+{
+  "servers": {
+    "gcloud-ftp": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-ftp"],
+      "env": {
+        "GCLOUD_FTP_ROOT": "/absolute/path/to/gcloud-ftp",
+        "FTP_USER": "user",
+        "FTP_PASS": "user",
+        "FTP_PORT": "1821"
+      }
+    }
+  }
+}
+```
+
+**Codex CLI** (`~/.codex/config.toml`)
+```toml
+[mcp_servers.gcloud_ftp]
+command = "npx"
+args = ["-y", "@modelcontextprotocol/server-ftp"]
+
+[mcp_servers.gcloud_ftp.env]
+GCLOUD_FTP_ROOT = "/absolute/path/to/gcloud-ftp"
+FTP_USER = "user"
+FTP_PASS = "user"
+FTP_PORT = "1821"
+```
+
+**Copilot CLI** (`~/.copilot/mcp-config.json`)
+```json
+{
+  "mcpServers": {
+    "gcloud-ftp": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-ftp"],
+      "env": {
+        "GCLOUD_FTP_ROOT": "/absolute/path/to/gcloud-ftp",
+        "FTP_USER": "user",
+        "FTP_PASS": "user",
+        "FTP_PORT": "1821"
+      },
+      "tools": [
+        "ftp_list",
+        "ftp_download",
+        "ftp_upload",
+        "ftp_delete",
+        "ftp_rename",
+        "ftp_mkdir",
+        "ftp_rmdir",
+        "ftp_stat",
+        "ftp_pwd"
+      ]
+    }
+  }
+}
+```
+
 ## Common Use Cases
 
 ### Use Case 1: Local Development Assistant

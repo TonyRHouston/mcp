@@ -19,6 +19,9 @@ Start with one of these servers based on your needs:
 | **Git** | Managing git repositories | Python |
 | **Fetch** | Fetching web content | Python |
 | **Time** | Time and timezone operations | Python |
+| **FTP (gcloud-ftp)** | Google Drive via FTP tools | TypeScript |
+
+**Note**: The FTP server requires the gcloud-ftp adapter and a one-time OAuth setup. See the FTP section in [USAGE_GUIDE.md](USAGE_GUIDE.md#8-ftp-server-gcloud-ftp-bridge).
 
 ## Step 2: Test the Server
 

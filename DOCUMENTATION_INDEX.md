@@ -40,7 +40,7 @@ Complete guide to MCP Servers documentation.
 - Understanding MCP architecture
 - All installation methods
 - Configuration for all clients (Claude Desktop, VS Code, Zed)
-- Detailed documentation for all 7 reference servers
+- Detailed documentation for all 8 reference servers
 - Common use cases with examples
 - Troubleshooting basics
 - Advanced configuration
@@ -48,6 +48,18 @@ Complete guide to MCP Servers documentation.
 - FAQ
 
 **Best for**: Understanding all features, advanced usage
+
+---
+
+### [FTP_FULL_TEST.md](FTP_FULL_TEST.md)
+**End-to-end validation for the gcloud-ftp bridge**
+
+- One-time OAuth steps
+- CLI and MCP Inspector tests
+- VS Code, Codex CLI, and Copilot CLI checks
+- Troubleshooting and cleanup
+
+**Best for**: Full integration testing, release validation
 
 ---
 

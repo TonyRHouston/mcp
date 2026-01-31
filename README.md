@@ -1379,6 +1379,8 @@ Additional resources on MCP.
 > **New to MCP?** Start with the [Quick Start Guide](QUICK_START.md) to get up and running in under 10 minutes!
 >
 > For comprehensive documentation, see the [Usage Guide](USAGE_GUIDE.md).
+>
+> Need Google Drive via FTP tools? See the FTP (gcloud-ftp bridge) section in [USAGE_GUIDE.md](USAGE_GUIDE.md#8-ftp-server-gcloud-ftp-bridge).
 
 ### Quick Installation
 
