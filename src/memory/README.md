@@ -194,6 +194,12 @@ The server can be configured using the following environment variables:
 
 - `STORAGE_TYPE`: Storage backend type (default: `filesystem`). Options: `filesystem`, `googledrive`
 - `MEMORY_FILE_PATH`: Path to the memory storage JSON file (default: `memory.json` in the server directory)
+- `MEMORY_FILTER_MODE`: Observation filter mode (default: `off`). Options: `off`, `heuristic`, `strict`
+- `MEMORY_MIN_WORDS`: Minimum word count for observations (default: `4`, `6` in strict mode)
+- `MEMORY_MIN_CHARS`: Minimum character count for observations (default: `20`, `40` in strict mode)
+- `MEMORY_ALLOW_KEYWORDS`: Comma-separated keywords that always allow an observation (optional)
+- `MEMORY_DENY_KEYWORDS`: Comma-separated keywords that always reject an observation (optional)
+- `MEMORY_FILTER_DEBUG`: Set to `true` to log filtered observations to stderr
 
 ##### Google Drive Storage
 

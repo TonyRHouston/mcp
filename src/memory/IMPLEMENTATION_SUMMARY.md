@@ -81,6 +81,12 @@ The implementation introduces a clean abstraction layer that separates storage c
 | `GOOGLE_DRIVE_CREDENTIALS` | - | Service Account JSON credentials |
 | `GOOGLE_DRIVE_FILENAME` | `mcp-memory.json` | Filename in Google Drive |
 | `GOOGLE_DRIVE_FOLDER_ID` | - | Parent folder ID (optional, supports Shared Drives) |
+| `MEMORY_FILTER_MODE` | `off` | Observation filter mode: `off`, `heuristic`, `strict` |
+| `MEMORY_MIN_WORDS` | `4` | Minimum word count for observations (`6` in strict mode) |
+| `MEMORY_MIN_CHARS` | `20` | Minimum character count for observations (`40` in strict mode) |
+| `MEMORY_ALLOW_KEYWORDS` | - | Comma-separated keywords that always allow an observation |
+| `MEMORY_DENY_KEYWORDS` | - | Comma-separated keywords that always reject an observation |
+| `MEMORY_FILTER_DEBUG` | `false` | Log filtered observations to stderr |
 
 ### Example Configurations
 

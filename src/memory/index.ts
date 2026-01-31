@@ -14,6 +14,108 @@ import {
   createStorageBackend,
 } from './storage.js';
 
+type MemoryFilterMode = 'off' | 'heuristic' | 'strict';
+
+const memoryFilterMode = ((process.env.MEMORY_FILTER_MODE || 'off').toLowerCase() as MemoryFilterMode);
+const memoryFilterEnabled = memoryFilterMode !== 'off';
+const memoryFilterDebug = process.env.MEMORY_FILTER_DEBUG === 'true';
+const memoryMinWords = Number.parseInt(process.env.MEMORY_MIN_WORDS || (memoryFilterMode === 'strict' ? '6' : '4'), 10);
+const memoryMinChars = Number.parseInt(process.env.MEMORY_MIN_CHARS || (memoryFilterMode === 'strict' ? '40' : '20'), 10);
+
+const defaultAllowKeywords = [
+  'prefers', 'likes', 'dislikes', 'allergic', 'allergy', 'medical', 'diagnosis',
+  'timezone', 'location', 'address', 'email', 'phone', 'deadline', 'goal',
+  'requirement', 'must', "can't", 'cannot', 'needs', 'schedule', 'meeting',
+  'project', 'repository', 'api key', 'token', 'ssh', 'account', 'billing',
+];
+
+const defaultDenyKeywords = [
+  'ok', 'okay', 'thanks', 'thank you', 'got it', 'sure', 'done', 'test',
+  'testing', 'foo', 'bar', 'lorem', 'ipsum',
+];
+
+const allowKeywords = (process.env.MEMORY_ALLOW_KEYWORDS || defaultAllowKeywords.join(','))
+  .split(',')
+  .map(k => k.trim().toLowerCase())
+  .filter(Boolean);
+
+const denyKeywords = (process.env.MEMORY_DENY_KEYWORDS || defaultDenyKeywords.join(','))
+  .split(',')
+  .map(k => k.trim().toLowerCase())
+  .filter(Boolean);
+
+function hasWord(haystack: string, needle: string): boolean {
+  if (!needle) return false;
+  const escaped = needle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const regex = new RegExp(`\\b${escaped}\\b`, 'i');
+  return regex.test(haystack);
+}
+
+function isInsightfulObservation(text: string): boolean {
+  const normalized = text.trim();
+  if (!normalized) return false;
+
+  const lower = normalized.toLowerCase();
+  for (const deny of denyKeywords) {
+    if (hasWord(lower, deny)) {
+      return false;
+    }
+  }
+
+  for (const allow of allowKeywords) {
+    if (hasWord(lower, allow)) {
+      return true;
+    }
+  }
+
+  const words = normalized.split(/\s+/).filter(Boolean);
+  if (words.length < memoryMinWords) return false;
+  if (normalized.length < memoryMinChars) return false;
+  return true;
+}
+
+function filterObservations(contents: string[]): string[] {
+  if (!memoryFilterEnabled) return contents;
+  return contents.filter(content => {
+    const keep = isInsightfulObservation(content);
+    if (memoryFilterDebug && !keep) {
+      console.error(`[memory-filter] Dropped observation: "${content}"`);
+    }
+    return keep;
+  });
+}
+
+function filterEntities(entities: Entity[]): Entity[] {
+  if (!memoryFilterEnabled) return entities;
+  return entities
+    .map(entity => ({
+      ...entity,
+      observations: filterObservations(entity.observations || []),
+    }))
+    .filter(entity => {
+      const keep = entity.observations.length > 0;
+      if (memoryFilterDebug && !keep) {
+        console.error(`[memory-filter] Dropped entity with no kept observations: "${entity.name}"`);
+      }
+      return keep;
+    });
+}
+
+function filterObservationPayload(
+  observations: { entityName: string; contents: string[] }[]
+): { entityName: string; contents: string[] }[] {
+  if (!memoryFilterEnabled) return observations;
+  return observations
+    .map(item => ({ ...item, contents: filterObservations(item.contents || []) }))
+    .filter(item => {
+      const keep = item.contents.length > 0;
+      if (memoryFilterDebug && !keep) {
+        console.error(`[memory-filter] Dropped observations for entity: "${item.entityName}"`);
+      }
+      return keep;
+    });
+}
+
 // The KnowledgeGraphManager class contains all operations to interact with the knowledge graph
 class KnowledgeGraphManager {
   private storage: StorageBackend;
@@ -365,11 +467,33 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
   switch (name) {
     case "create_entities":
-      return { content: [{ type: "text", text: JSON.stringify(await knowledgeGraphManager.createEntities(args.entities as Entity[]), null, 2) }] };
+      return {
+        content: [{
+          type: "text",
+          text: JSON.stringify(
+            await knowledgeGraphManager.createEntities(
+              filterEntities(args.entities as Entity[])
+            ),
+            null,
+            2
+          ),
+        }],
+      };
     case "create_relations":
       return { content: [{ type: "text", text: JSON.stringify(await knowledgeGraphManager.createRelations(args.relations as Relation[]), null, 2) }] };
     case "add_observations":
-      return { content: [{ type: "text", text: JSON.stringify(await knowledgeGraphManager.addObservations(args.observations as { entityName: string; contents: string[] }[]), null, 2) }] };
+      return {
+        content: [{
+          type: "text",
+          text: JSON.stringify(
+            await knowledgeGraphManager.addObservations(
+              filterObservationPayload(args.observations as { entityName: string; contents: string[] }[])
+            ),
+            null,
+            2
+          ),
+        }],
+      };
     case "delete_entities":
       await knowledgeGraphManager.deleteEntities(args.entityNames as string[]);
       return { content: [{ type: "text", text: "Entities deleted successfully" }] };
